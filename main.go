@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"golang.org/x/exp/slices"
@@ -59,8 +60,10 @@ func indexHandeler(w http.ResponseWriter, r *http.Request) {
 
 			convertFile((UPLOAD_FOLDER + "/" + handler.Filename))
 
+			newFilePath := strings.Replace(UPLOAD_FOLDER+"/"+handler.Filename, ".docx", "", 1)
+			pdfFile, _ := ioutil.ReadFile(newFilePath)
 			w.Header().Add("Content-Type", "application/octet-stream")
-			return
+			w.Write(pdfFile)
 		} else {
 			tpl.Execute(w, nil)
 		}
