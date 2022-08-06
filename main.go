@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"text/template"
 
@@ -14,7 +15,7 @@ import (
 var tpl = template.Must(template.ParseFiles("./view/main.gohtml"))
 
 const (
-	UPLOAD_FOLDER = "/tmp"
+	UPLOAD_FOLDER = "./files"
 )
 
 var ALLOWED_EXTENSIONS = []string{".doc", ".docx"}
@@ -45,7 +46,7 @@ func indexHandeler(w http.ResponseWriter, r *http.Request) {
 		defer file.Close()
 
 		if slices.Contains(ALLOWED_EXTENSIONS, filepath.Ext(handler.Filename)) {
-			tempFile, err := ioutil.TempFile("./files", "*.docx")
+			tempFile, err := ioutil.TempFile(UPLOAD_FOLDER, "*.docx")
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -56,11 +57,9 @@ func indexHandeler(w http.ResponseWriter, r *http.Request) {
 			}
 			tempFile.Write(fileBytes)
 
-			convertBytes, _ := ioutil.ReadFile(tempFile.Name())
-			responseBytes := convertFile(convertBytes)
+			convertFile((UPLOAD_FOLDER + "/" + handler.Filename))
+
 			w.Header().Add("Content-Type", "application/octet-stream")
-			w.Header().Add("Content-Disposition", "attachment; filename=docFile.docx")
-			w.Write(responseBytes)
 			return
 		} else {
 			tpl.Execute(w, nil)
@@ -68,6 +67,6 @@ func indexHandeler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func convertFile(bytes []byte) []byte {
-	return []byte{}
+func convertFile(inputFile string) {
+	exec.Command("libreoffice --headless --convert-to pdf --outdir " + UPLOAD_FOLDER + inputFile).Output()
 }
